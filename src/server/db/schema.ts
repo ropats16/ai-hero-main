@@ -39,7 +39,7 @@ export const users = createTable("user", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
-  requests: many(userRequests),
+  requests: many(requests),
 }));
 
 export const accounts = createTable(
@@ -113,22 +113,18 @@ export const verificationTokens = createTable(
   }),
 );
 
-export const userRequests = createTable("user_request", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id", { length: 255 })
-    .notNull()
-    .references(() => users.id),
-  createdAt: timestamp("created_at", {
-    mode: "date",
-    withTimezone: true,
-  })
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
+export const requests = createTable("request", {
+	id: serial("id").primaryKey(),
+	userId: varchar("user_id", { length: 255 })
+		.notNull()
+		.references(() => users.id),
+	timestamp: timestamp("timestamp", {
+		mode: "date",
+		withTimezone: true,
+	})
+		.notNull()
+		.default(sql`CURRENT_TIMESTAMP`),
 });
-
-export const userRequestsRelations = relations(userRequests, ({ one }) => ({
-  user: one(users, { fields: [userRequests.userId], references: [users.id] }),
-}));
 
 export declare namespace DB {
   export type User = InferSelectModel<typeof users>;
@@ -145,6 +141,6 @@ export declare namespace DB {
     typeof verificationTokens
   >;
 
-  export type UserRequest = InferSelectModel<typeof userRequests>;
-  export type NewUserRequest = InferInsertModel<typeof userRequests>;
+  export type Request = InferSelectModel<typeof requests>;
+  export type NewRequest = InferInsertModel<typeof requests>;
 }

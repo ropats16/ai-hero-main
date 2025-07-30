@@ -4,8 +4,9 @@ import { useChat } from "@ai-sdk/react";
 import { ChatMessage } from "~/components/chat-message";
 import { SignInModal } from "~/components/sign-in-modal";
 import type { Message } from "ai";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ChatProps {
   userName: string;
@@ -23,8 +24,15 @@ export const ChatPage = ({
     handleInputChange,
     handleSubmit: originalHandleSubmit,
     isLoading,
+    error,
     data,
   } = useChat();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message || "An error occurred while processing your request. Please try again.");
+    }
+  }, [error]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -4,7 +4,7 @@ import { streamText, createDataStreamResponse } from "ai";
 import { auth } from "~/server/auth";
 import { model } from "~/models";
 import { searchSerper } from "~/serper";
-import { checkRateLimit, addUserRequest } from "~/server/db/queries";
+import { checkRateLimit, recordRequest } from "~/server/db/queries";
 
 export const maxDuration = 60;
 
@@ -15,38 +15,29 @@ export async function POST(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // Check rate limit before processing the request
-  const rateLimitResult = await checkRateLimit(session.user.id);
-  
-  if (!rateLimitResult.allowed) {
-    return new Response(
-      JSON.stringify({
-        error: "Rate limit exceeded",
-        remaining: rateLimitResult.remaining,
-        limit: rateLimitResult.limit,
-      }),
-      {
-        status: 429,
-        headers: {
-          "Content-Type": "application/json",
-          "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
-          "X-RateLimit-Limit": rateLimitResult.limit.toString(),
-        },
-      }
-    );
-  }
-
   const body = (await request.json()) as {
-    messages: Array<Message>;
-  };
+		messages: Array<Message>;
+		chatId?: string;
+	};
+
+  // Check rate limit
+	const canMakeRequest = await checkRateLimit(session.user.id);
+	if (!canMakeRequest) {
+		return new Response("Rate limit exceeded", { status: 429 });
+	}
+
+	// Record the request
+	await recordRequest(session.user.id);
+
+  const { messages, chatId } = body;
+
+	if (!messages.length) {
+		return new Response("No messages provided", { status: 400 });
+	}
 
   return createDataStreamResponse({
     execute: async (dataStream) => {
-      const { messages } = body;
-
-      // Record the request after rate limit check passes
-      await addUserRequest(session.user.id);
-
+      
       const result = streamText({
         model,
         messages,
