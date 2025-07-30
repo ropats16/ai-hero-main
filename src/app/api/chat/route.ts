@@ -54,7 +54,7 @@ Remember to use the searchWeb tool whenever you need to find current information
             },
           },
         },
-        maxSteps: 10,
+        // maxSteps: 10,
       });
 
       result.mergeIntoDataStream(dataStream);

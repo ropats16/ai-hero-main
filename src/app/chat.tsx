@@ -1,27 +1,29 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useSession } from "next-auth/react";
-import { useState } from "react";
-import { Loader2, Send } from "lucide-react";
 import { ChatMessage } from "~/components/chat-message";
 import { SignInModal } from "~/components/sign-in-modal";
+import type { Message } from "ai";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 interface ChatProps {
   userName: string;
   isAuthenticated: boolean;
 }
 
-export const ChatPage = ({ userName, isAuthenticated }: ChatProps) => {
-  const { data: session } = useSession();
+export const ChatPage = ({
+  userName,
+  isAuthenticated,
+}: ChatProps) => {
   const [showSignInModal, setShowSignInModal] = useState(false);
-
   const {
     messages,
     input,
     handleInputChange,
     handleSubmit: originalHandleSubmit,
     isLoading,
+    data,
   } = useChat();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -43,11 +45,11 @@ export const ChatPage = ({ userName, isAuthenticated }: ChatProps) => {
           role="log"
           aria-label="Chat messages"
         >
-          {messages.map((message) => {
+          {messages.map((message, index) => {
             return (
               <ChatMessage
-                key={message.id}
-                parts={message.parts}
+                key={index}
+                parts={message.parts ?? []}
                 role={message.role}
                 userName={userName}
               />
@@ -68,13 +70,13 @@ export const ChatPage = ({ userName, isAuthenticated }: ChatProps) => {
               />
               <button
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading}
                 className="rounded bg-gray-700 px-4 py-2 text-white hover:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:hover:bg-gray-700"
               >
                 {isLoading ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  <Send className="size-4" />
+                  "Send"
                 )}
               </button>
             </div>

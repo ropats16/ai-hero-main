@@ -1,10 +1,10 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 import type { Message } from "ai";
 
-export type MessagePart = NonNullable<Message["parts"]>[number];
+type MessagePart = NonNullable<Message["parts"]>[number];
 
 interface ChatMessageProps {
-  parts?: MessagePart[];
+  parts: MessagePart[];
   role: string;
   userName: string;
 }
@@ -92,13 +92,14 @@ export const ChatMessage = ({ parts, role, userName }: ChatMessageProps) => {
         </p>
 
         <div className="prose prose-invert max-w-none">
-          {parts?.map((part, index) => {
+          {parts.map((part, index) => {
             if (part.type === "text") {
               return <Markdown key={index}>{part.text}</Markdown>;
             }
             if (part.type === "tool-invocation") {
               return <ToolInvocation key={index} part={part} />;
             }
+            return null;
           })}
         </div>
       </div>
