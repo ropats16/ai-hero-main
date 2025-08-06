@@ -16,31 +16,31 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as {
-		messages: Array<Message>;
-		chatId?: string;
-	};
+    messages: Array<Message>;
+    chatId?: string;
+  };
 
   // Check rate limit
-	const canMakeRequest = await checkRateLimit(session.user.id);
-	if (!canMakeRequest) {
-		return new Response("Rate limit exceeded", { status: 429 });
-	}
+  const canMakeRequest = await checkRateLimit(session.user.id);
+  if (!canMakeRequest) {
+    return new Response("Rate limit exceeded", { status: 429 });
+  }
 
-	// Record the request
-	await recordRequest(session.user.id);
+  // Record the request
+  await recordRequest(session.user.id);
 
   const { messages, chatId } = body;
 
-	if (!messages.length) {
-		return new Response("No messages provided", { status: 400 });
-	}
+  if (!messages.length) {
+    return new Response("No messages provided", { status: 400 });
+  }
 
   return createDataStreamResponse({
     execute: async (dataStream) => {
-      
       const result = streamText({
         model,
         messages,
+        maxSteps: 10,
         system: `You are a helpful AI assistant with access to real-time web search capabilities. When answering questions:
 
 1. Always search the web for up-to-date information when relevant
@@ -49,8 +49,17 @@ export async function POST(request: Request) {
 4. If you're unsure about something, search the web to verify
 5. When providing information, always include the source where you found it using markdown links
 6. Never include raw URLs - always use markdown link format
+7. When mentioning platforms, websites, or resources, always format them as markdown links
+8. Integrate links naturally into your text rather than listing them separately
 
-Remember to use the searchWeb tool whenever you need to find current information.`,
+When you use the \`searchWeb\` tool, you will receive a list of search results formatted as a JSON array. Each result in the array will contain a title, a link, and a snippet. It is your responsibility to process this data and present it to the user in a readable format.
+
+Here’s how you should handle the search results:
+- For each search result, you MUST create a markdown link by combining the title and the link. For example, if a result has the title "HyperBeam Docs" and the link "https://docs.hyperbeam.io", you must format it as "[HyperBeam Docs](https://docs.hyperbeam.io)".
+- Use the snippet to understand the context of the search result and incorporate it into your answer naturally.
+- Do not just list the links. Instead, weave them into your explanation to provide a seamless and informative response.
+
+Remember to use the \`searchWeb\` tool whenever you need to find current information.`,
         tools: {
           searchWeb: {
             parameters: z.object({
