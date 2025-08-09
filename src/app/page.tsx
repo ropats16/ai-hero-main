@@ -6,15 +6,6 @@ import { AuthButton } from "../components/auth-button.tsx";
 import { getChat, getChats } from "~/server/db/queries.ts";
 import type { Message } from "ai";
 
-const chats = [
-  {
-    id: "1",
-    title: "My First Chat",
-  },
-];
-
-const activeChatId = "1";
-
 export default async function HomePage({
   searchParams,
 }: {
@@ -23,8 +14,10 @@ export default async function HomePage({
   const session = await auth();
   const userName = session?.user?.name ?? "Guest";
   const isAuthenticated = !!session?.user;
-  const { id: chatId } = await searchParams;
+  const { id: chatIdFromUrl } = (await searchParams) as { id?: string };
 
+  const chatId = chatIdFromUrl ?? crypto.randomUUID();
+  const isNewChat = !chatIdFromUrl;
   // Fetch chats if user is authenticated
   const chats =
     isAuthenticated && session.user?.id
@@ -33,8 +26,8 @@ export default async function HomePage({
 
   // Fetch active chat if chatId is present and user is authenticated
   const activeChat =
-    chatId && isAuthenticated && session.user?.id
-      ? await getChat({ userId: session.user.id, chatId })
+    chatIdFromUrl && isAuthenticated && session.user?.id
+      ? await getChat({ userId: session.user.id, chatId: chatIdFromUrl })
       : null;
 
   // Map the messages to the correct format for useChat
@@ -69,9 +62,9 @@ export default async function HomePage({
             chats.map((chat) => (
               <div key={chat.id} className="flex items-center gap-2">
                 <Link
-                  href={`/?chatId=${chat.id}`}
+                  href={`/?id=${chat.id}`}
                   className={`flex-1 rounded-lg p-3 text-left text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                    chat.id === activeChatId
+                    chat.id === chatId
                       ? "bg-gray-700"
                       : "hover:bg-gray-750 bg-gray-800"
                   }`}
@@ -97,9 +90,11 @@ export default async function HomePage({
       </div>
 
       <ChatPage
+        key={chatId}
         userName={userName}
         isAuthenticated={isAuthenticated}
         chatId={chatId}
+        isNewChat={isNewChat}
         initialMessages={initialMessages}
       />
     </div>

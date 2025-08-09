@@ -13,7 +13,8 @@ import { useRouter } from "next/navigation";
 interface ChatProps {
   userName: string;
   isAuthenticated: boolean;
-  chatId?: string;
+  chatId: string;
+  isNewChat: boolean;
   initialMessages: Message[];
 }
 
@@ -21,6 +22,7 @@ export const ChatPage = ({
   userName,
   isAuthenticated,
   chatId,
+  isNewChat,
   initialMessages,
 }: ChatProps) => {
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -37,6 +39,7 @@ export const ChatPage = ({
   } = useChat({
     body: {
       chatId,
+      isNewChat,
     },
     initialMessages,
   });
