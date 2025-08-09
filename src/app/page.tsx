@@ -3,6 +3,8 @@ import Link from "next/link";
 import { auth } from "~/server/auth/index.ts";
 import { ChatPage } from "./chat.tsx";
 import { AuthButton } from "../components/auth-button.tsx";
+import { getChat, getChats } from "~/server/db/queries.ts";
+import type { Message } from "ai";
 
 const chats = [
   {
@@ -13,10 +15,36 @@ const chats = [
 
 const activeChatId = "1";
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: { id?: string };
+}) {
   const session = await auth();
   const userName = session?.user?.name ?? "Guest";
   const isAuthenticated = !!session?.user;
+  const { id: chatId } = await searchParams;
+
+  // Fetch chats if user is authenticated
+  const chats =
+    isAuthenticated && session.user?.id
+      ? await getChats({ userId: session.user.id })
+      : [];
+
+  // Fetch active chat if chatId is present and user is authenticated
+  const activeChat =
+    chatId && isAuthenticated && session.user?.id
+      ? await getChat({ userId: session.user.id, chatId })
+      : null;
+
+  // Map the messages to the correct format for useChat
+  const initialMessages =
+    activeChat?.messages.map((msg) => ({
+      id: msg.id,
+      role: msg.role as "user" | "assistant",
+      parts: msg.content as Message["parts"],
+      content: "",
+    })) ?? [];
 
   return (
     <div className="flex h-screen bg-gray-950">
@@ -68,7 +96,12 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <ChatPage userName={userName} isAuthenticated={isAuthenticated} />
+      <ChatPage
+        userName={userName}
+        isAuthenticated={isAuthenticated}
+        chatId={chatId}
+        initialMessages={initialMessages}
+      />
     </div>
   );
 }

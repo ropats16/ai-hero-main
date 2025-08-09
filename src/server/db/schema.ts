@@ -39,7 +39,6 @@ export const users = createTable("user", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
-  chats: many(chats),
 }));
 
 export const accounts = createTable(

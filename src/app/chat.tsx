@@ -7,17 +7,25 @@ import type { Message } from "ai";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { isNewChatCreated } from "~/utils";
+import { useRouter } from "next/navigation";
 
 interface ChatProps {
   userName: string;
   isAuthenticated: boolean;
+  chatId?: string;
+  initialMessages: Message[];
 }
 
 export const ChatPage = ({
   userName,
   isAuthenticated,
+  chatId,
+  initialMessages,
 }: ChatProps) => {
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const router = useRouter();
+
   const {
     messages,
     input,
@@ -26,13 +34,28 @@ export const ChatPage = ({
     isLoading,
     error,
     data,
-  } = useChat();
+  } = useChat({
+    body: {
+      chatId,
+    },
+    initialMessages,
+  });
 
   useEffect(() => {
     if (error) {
-      toast.error(error.message || "An error occurred while processing your request. Please try again.");
+      toast.error(
+        error.message ||
+          "An error occurred while processing your request. Please try again.",
+      );
     }
   }, [error]);
+
+  useEffect(() => {
+    const lastDataItem = data?.[data.length - 1];
+    if (isNewChatCreated(lastDataItem)) {
+      router.push(`/?id=${lastDataItem.chatId}`);
+    }
+  }, [data, router]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
